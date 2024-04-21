@@ -5,10 +5,8 @@ from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
-from flask_jwt_extended import create_access_token, get_jwt
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import get_jwt_identity
-from werkzeug.security import check_password_hash
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from werkzeug.security import get_hash, check_password_hash
 
 api = Blueprint('api', __name__)
 
@@ -27,33 +25,51 @@ def handle_hello():
 
 @api.route('/signup', methods=['POST'])
 def create_user():
-    email = request.json.get("email")
-    password = request.json.get("password")
-    secure_password = get_hash(
-        password)
+    try:
+        email = request.json.get("email")
+        password = request.json.get("password")
+
+        if not email or not password:
+            return jsonify({"error": "Missing email or password"}), 400
     
-    new_user = User()
-    new_user.email = email
-    new_user.password = secure_password
-    new_user.is_active = True
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({"msg": "User created succesfully"}), 201
+        secure_password = get_hash(password)
+    
+        new_user = User(email=email, password=secure_password, is_active=True)
+        db.session.add(new_user)
+        db.session.commit()
+        # new_user.email = email
+        # new_user.password = secure_password
+        # new_user.is_active = True
+        # db.session.add(new_user)
+        # db.session.commit()
+        return jsonify({"msg": "User created succesfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @api.route('/login', methods=['POST'])
 def login_user():
-  
-    email = request.json.get("email", None)
-    password = request.json.get("password", None)
-    
-    found_user = User.query.filter_by(email=email, password=get_hash(password)).one_or_none()
 
-    if found_user is None:
-        return "email or password is incorrect, please try again", 400
+    try:
+  
+        email = request.json.get("email", None)
+        password = request.json.get("password", None)
+
+        if not email or not password:
+            return jsonify({"error": "Missing email or password"}), 400
     
-    token = create_access_token(identity=email)
-    return jsonify(token=token)
+        found_user = User.query.filter_by(email=email).first()
+
+        # if found_user is None:
+        # return "email or password is incorrect, please try again", 400
+        if not found_user or not check_password_hash(found_user.password, password):
+            return jsonify({"error": "Invalid email or password"}), 401
+    
+        token = create_access_token(identity=email)
+        return jsonify({"token": token}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 
 @api.route("/private", methods=["GET"])
 @jwt_required()
@@ -64,5 +80,11 @@ def protected():
 
 @api.route("/get-hash", methods=["POST"])
 def handle_get_hash():
-    to_hash = request.json.get("string")
-    return get_hash(to_hash)
+    # to_hash = request.json.get("string")
+    # return get_hash(to_hash)
+    try:
+        to_hash = request.json.get("string")
+        hashed_string = get_hash(to_hash)
+        return jsonify({"hashed_string": hashed_string}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

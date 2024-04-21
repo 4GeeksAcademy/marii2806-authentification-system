@@ -27,7 +27,7 @@ export const Private = () => {
   return (
     <>
     <div className="text-center mt-5">
-      {userToken && <p>User loged in!</p>}
+      {userToken && <p>User logged in!</p>}
       <button onClick={logout}>Logout</button>
     </div>
     </>

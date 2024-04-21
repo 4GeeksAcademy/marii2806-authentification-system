@@ -2,7 +2,7 @@ import React, {useState } from 'react'
 import '../../styles/login.css'
 import { useContext } from 'react'
 import { Context } from '../store/appContext'
-import { useNavigate,Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 
 export const Login = () => {
@@ -48,7 +48,7 @@ export const Login = () => {
           {error && <p>{error}</p>}
 
           <div className='goHome-login'>
-            <Link to="/">Go to Home</Link>
+            <Link to="/">Go to Home Page</Link>
         </div>
 
       </div>
